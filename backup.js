@@ -21,6 +21,14 @@ function slug(text, max = 48) {
     .slice(0, max) || 'sem-titulo';
 }
 
+// Pasta do jogo dentro de backups/: ID primeiro (estavel, nunca muda) e o
+// titulo depois, so pra facilitar achar visualmente quando ha varios jogos.
+function gameDirName(gameId, gameTitle) {
+  const id = gameId || 'sem-jogo';
+  const title = gameTitle ? slug(gameTitle) : '';
+  return title ? `${id}_${title}` : String(id);
+}
+
 async function listCards(mcdPath) {
   const entries = await fsp.readdir(mcdPath, { withFileTypes: true });
   return entries
@@ -87,7 +95,7 @@ async function createBackup({ mcdPath, gameId, gameTitle, achievement, alsoUnloc
 
   const fresh = await waitFreshSave(cards, since, { timeoutMs: waitTimeoutMs });
 
-  const dir = path.join(mcdPath, 'backups', String(gameId || 'sem-jogo'));
+  const dir = path.join(mcdPath, 'backups', gameDirName(gameId, gameTitle));
   await fsp.mkdir(dir, { recursive: true });
 
   const when = new Date();
@@ -118,7 +126,7 @@ async function createBackup({ mcdPath, gameId, gameTitle, achievement, alsoUnloc
   return { file: dest, name, bytes, cards: cards.length, fresh };
 }
 
-module.exports = { createBackup, listCards };
+module.exports = { createBackup, listCards, gameDirName };
 
 /**
  * Maquina de estado do detector, isolada para ser testavel.

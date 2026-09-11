@@ -45,7 +45,7 @@ No modo automático ele consulta `API_GetUserProfile.php` e usa o campo `LastGam
 - **Só as que faltam / só as conquistadas / todas** — o filtro principal.
 - **Quantidade** — quantas linhas mostrar.
 - **Ordem** — ordem do set, menos pontos primeiro (útil para achar as fáceis restantes), mais raras primeiro, ou conquistadas recentemente.
-- **Tipo** — progressão/final ou perdíveis, usando o campo `type` da API.
+- **Tipo** — progressão/final ou perdíveis, usando o campo `Type` da API.
 - **IDs específicos** — se preenchido, ignora tudo acima e mostra exatamente aquelas conquistas, na ordem digitada.
 
 ## Backup do memory card
@@ -55,7 +55,7 @@ Ative em Configurações → Backup e aponte a pasta onde estão os `Mcd001.ps2`
 ```
 <pasta dos memory cards>/
 └── backups/
-    └── 4265/                                                   ← ID do jogo no RA
+    └── 4265_Shadow-of-the-Colossus/                             ← ID + título do jogo no RA
         ├── 2026-09-10_21-45-03_manual.zip
         ├── 2026-09-10_22-03-17_ach79434_Primeiro-Colosso.zip
         └── 2026-09-10_22-31-50_ach79440_Segundo-Colosso_mais1.zip

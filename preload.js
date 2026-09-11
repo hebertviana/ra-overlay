@@ -11,5 +11,7 @@ contextBridge.exposeInMainWorld('ra', {
   refresh: () => ipcRenderer.invoke('refresh'),
   pickFolder: () => ipcRenderer.invoke('pick-folder'),
   backupNow: () => ipcRenderer.invoke('backup-now'),
-  openBackups: () => ipcRenderer.invoke('open-backups')
+  openBackups: () => ipcRenderer.invoke('open-backups'),
+  setInteractive: flag => ipcRenderer.send('set-interactive', flag),
+  openAchievement: id => ipcRenderer.send('open-achievement', id)
 });

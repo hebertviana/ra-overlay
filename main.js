@@ -1,7 +1,7 @@
 const { app, BrowserWindow, ipcMain, globalShortcut, screen, dialog, shell, safeStorage } = require('electron');
 const path = require('path');
 const fs = require('fs');
-const { createBackup, classify } = require('./backup');
+const { createBackup, classify, gameDirName } = require('./backup');
 
 const API = 'https://retroachievements.org/API';
 const MIN_INTERVAL = 10; // segundos. Nao baixe disso, a API do RA e compartilhada.
@@ -48,6 +48,8 @@ const DEFAULTS = {
   showDescription: true,
   showProgressBar: true,
   compact: false,
+  iconGrid: false,
+  gridCols: 0,          // 0 = automatico (quebra pela largura da janela)
   scale: 100,
   opacity: 90,
   width: 380,
@@ -134,9 +136,9 @@ function applyFilters(list) {
   else if (config.filter === 'unlocked') out = out.filter(a => isEarned(a));
 
   if (config.typeFilter === 'progression') {
-    out = out.filter(a => a.type === 'progression' || a.type === 'win_condition');
+    out = out.filter(a => a.Type === 'progression' || a.Type === 'win_condition');
   } else if (config.typeFilter === 'missable') {
-    out = out.filter(a => a.type === 'missable');
+    out = out.filter(a => a.Type === 'missable');
   }
 
   const sorters = {
@@ -245,7 +247,7 @@ async function poll() {
         description: a.Description,
         points: a.Points,
         badge: a.BadgeName,
-        type: a.type,
+        type: a.Type,
         rarity: data.NumDistinctPlayers
           ? Math.round((a.NumAwarded / data.NumDistinctPlayers) * 100)
           : null,
@@ -366,13 +368,28 @@ ipcMain.handle('backup-now', async () => {
 
 ipcMain.handle('open-backups', () => {
   if (!config.mcdPath) return;
-  const dir = path.join(config.mcdPath, 'backups', String(lastGameId || ''));
-  shell.openPath(fs.existsSync(dir) ? dir : path.join(config.mcdPath, 'backups'));
+  const named = path.join(config.mcdPath, 'backups', gameDirName(lastGameId, lastPayload?.game));
+  const legacy = path.join(config.mcdPath, 'backups', String(lastGameId || '')); // backups salvos antes do rename incluir o titulo
+  const dir = fs.existsSync(named) ? named : (fs.existsSync(legacy) ? legacy : path.join(config.mcdPath, 'backups'));
+  shell.openPath(dir);
 });
 
 ipcMain.handle('open-settings', openSettings);
 ipcMain.handle('toggle-lock', toggleLock);
 ipcMain.handle('refresh', poll);
+
+// O overlay normalmente deixa o clique atravessar (locked). Enquanto o mouse
+// esta sobre um icone da grade, o renderer pede pra capturar o clique so
+// naquele instante, pra dar pra segurar e abrir a conquista no site.
+ipcMain.on('set-interactive', (_e, flag) => {
+  if (!overlayWin || overlayWin.isDestroyed() || !locked) return;
+  overlayWin.setIgnoreMouseEvents(!flag, { forward: true });
+});
+
+ipcMain.on('open-achievement', (_e, id) => {
+  const n = parseInt(id, 10);
+  if (Number.isFinite(n)) shell.openExternal(`https://retroachievements.org/achievement/${n}`);
+});
 
 // O renderer mede a altura do conteudo e a janela se ajusta a ela.
 ipcMain.on('content-height', (_e, h) => {

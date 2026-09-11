@@ -58,6 +58,7 @@
   .actions {
     position: sticky; bottom: 0;
     display: flex; gap: 9px;
+    justify-content: center;
     padding: 14px 0 0;
     background: linear-gradient(transparent, var(--bg) 30%);
   }
@@ -178,6 +179,10 @@
     <div class="check"><input type="checkbox" id="showDescription"><label for="showDescription" style="margin:0">Descrição e raridade</label></div>
     <div class="check"><input type="checkbox" id="showProgressBar"><label for="showProgressBar" style="margin:0">Barra de progresso do set</label></div>
     <div class="check"><input type="checkbox" id="compact"><label for="compact" style="margin:0">Modo compacto</label></div>
+    <div class="check"><input type="checkbox" id="iconGrid"><label for="iconGrid" style="margin:0">Grade de ícones (só os ícones, como no site)</label></div>
+    <label><span class="lbl">Colunas da grade (0 = automático pela largura)</span>
+      <input type="number" id="gridCols" min="0" max="20"></label>
+    <p class="note">Nesse modo os ícones ficam lado a lado, sem lista. Passe o mouse sobre um ícone pra ver o nome, descrição e raridade. Segure o clique sobre ele pra abrir a conquista no site (dicas, comentários etc).</p>
 
     <label><span class="lbl">Largura <output id="widthOut"></output> px</span>
       <input type="range" id="width" min="240" max="700" step="10"></label>
@@ -199,7 +204,7 @@
 <script>
 const FIELDS = ['username','apiKey','gameMode','manualGameId','intervalSec','hardcore',
   'filter','onlyIds','typeFilter','sort','maxItems','showBadges','showDescription',
-  'showProgressBar','compact','scale','opacity','width',
+  'showProgressBar','compact','iconGrid','gridCols','scale','opacity','width',
   'backupEnabled','backupOnGameStart','mcdPath','backupKeep','backupWaitSec'];
 
 const el = id => document.getElementById(id);
@@ -209,6 +214,7 @@ function syncOutputs() {
   el('scaleOut').value = el('scale').value;
   el('opacityOut').value = el('opacity').value;
   el('manualGameId').disabled = el('gameMode').value !== 'manual';
+  el('gridCols').disabled = !el('iconGrid').checked;
   for (const id of ['mcdPath','backupKeep','backupWaitSec','backupOnGameStart','pick','backupNow','openBackups']) {
     el(id).disabled = !el('backupEnabled').checked;
   }
