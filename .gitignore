@@ -1,0 +1,11 @@
+node_modules/
+dist/
+
+# snapshot manual, nao faz parte do codigo
+files.zip
+files/
+
+# config local, especifico da maquina
+.claude/settings.local.json
+
+*.log

@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<style>
+  :root {
+    --ink: #f2f4f8;
+    --dim: #98a0b0;
+    --gold: #f0a91e;
+    --panel: 18, 20, 26;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    background: transparent;
+    overflow: hidden;
+    font-family: "Segoe UI", system-ui, sans-serif;
+    color: var(--ink);
+    user-select: none;
+    cursor: default;
+  }
+
+  #root { transform-origin: top left; }
+
+  .panel {
+    background: rgba(var(--panel), var(--bg-alpha, .9));
+    border-left: 2px solid var(--gold);
+    border-radius: 3px;
+    padding: 9px 11px;
+    backdrop-filter: blur(3px);
+  }
+
+  /* Quando o overlay esta destravado, arrastar em qualquer ponto move a janela. */
+  body.unlocked .panel {
+    -webkit-app-region: drag;
+    outline: 1px dashed rgba(240, 169, 30, .6);
+    outline-offset: 3px;
+  }
+
+  .head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-bottom: 7px;
+    margin-bottom: 7px;
+    border-bottom: 1px solid rgba(255, 255, 255, .08);
+  }
+  .head img { width: 22px; height: 22px; border-radius: 2px; }
+  .head h1 {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: .01em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+  }
+  .tally { font-size: 11px; color: var(--dim); font-variant-numeric: tabular-nums; }
+  .tally b { color: var(--gold); font-weight: 600; }
+
+  .bar { height: 2px; background: rgba(255, 255, 255, .1); margin-bottom: 8px; }
+  .bar span { display: block; height: 100%; background: var(--gold); }
+
+  ul { list-style: none; display: flex; flex-direction: column; gap: 7px; }
+
+  li { display: flex; gap: 8px; align-items: flex-start; }
+  li.done .name { color: var(--dim); }
+  li.done .badge { filter: grayscale(1); opacity: .45; }
+
+  .badge {
+    width: 30px; height: 30px;
+    border-radius: 2px;
+    flex-shrink: 0;
+    background: rgba(255, 255, 255, .06);
+  }
+  .compact .badge { width: 20px; height: 20px; }
+
+  .text { min-width: 0; flex: 1; }
+  .name {
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.25;
+    display: flex;
+    gap: 5px;
+    align-items: baseline;
+  }
+  .name span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pts { color: var(--gold); font-size: 11px; font-variant-numeric: tabular-nums; }
+  .desc {
+    font-size: 11px;
+    color: var(--dim);
+    line-height: 1.3;
+    margin-top: 1px;
+  }
+  .rare { color: #6f7788; font-size: 10px; margin-left: 4px; }
+
+  .msg { font-size: 11px; color: var(--dim); line-height: 1.4; }
+  .hint { font-size: 10px; color: #6f7788; margin-top: 6px; }
+
+  #toast {
+    margin-top: 5px;
+    padding: 6px 9px;
+    background: rgba(var(--panel), var(--bg-alpha, .9));
+    border-left: 2px solid var(--gold);
+    border-radius: 3px;
+    font-size: 11px;
+    line-height: 1.3;
+    word-break: break-all;
+  }
+  #toast.err { border-left-color: #d8574a; color: #f0a6a0; }
+  #toast:empty { display: none; }
+</style>
+</head>
+<body>
+  <div id="root"></div>
+
+<script>
+const root = document.getElementById('root');
+let lastHeight = 0;
+let toastTimer;
+
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c =>
+  ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+function badgeUrl(name, earned) {
+  const base = `https://media.retroachievements.org/Badge/${name}`;
+  return earned ? `${base}.png` : `${base}_lock.png`;
+}
+
+function render(d) {
+  const c = d.config || {};
+  document.body.classList.toggle('unlocked', d.locked === false);
+  root.style.transform = `scale(${(c.scale || 100) / 100})`;
+  document.documentElement.style.setProperty('--bg-alpha', (c.opacity ?? 90) / 100);
+
+  if (d.error) {
+    root.innerHTML = `<div class="panel"><p class="msg">${esc(d.error)}</p>
+      <p class="hint">Ctrl+Alt+P abre as configurações · Ctrl+Alt+R atualiza agora</p></div>`;
+    return measure();
+  }
+  if (!d.game) return;
+
+  const pct = d.total ? Math.round((d.earned / d.total) * 100) : 0;
+
+  const rows = (d.items || []).map(a => `
+    <li class="${a.earned ? 'done' : ''}">
+      ${c.showBadges ? `<img class="badge" src="${badgeUrl(a.badge, a.earned)}"
+        onerror="this.onerror=null;this.src='https://media.retroachievements.org/Badge/${esc(a.badge)}.png'">` : ''}
+      <div class="text">
+        <div class="name"><span>${esc(a.title)}</span><em class="pts">${a.points}</em></div>
+        ${c.showDescription && !c.compact
+          ? `<div class="desc">${esc(a.description)}${
+              a.rarity !== null ? `<em class="rare">${a.rarity}% dos jogadores</em>` : ''}</div>`
+          : ''}
+      </div>
+    </li>`).join('');
+
+  root.innerHTML = `
+    <div class="panel ${c.compact ? 'compact' : ''}">
+      <div class="head">
+        ${d.icon ? `<img src="${d.icon}" alt="">` : ''}
+        <h1>${esc(d.game)}</h1>
+        <div class="tally"><b>${d.earned}</b>/${d.total}</div>
+      </div>
+      ${c.showProgressBar ? `<div class="bar"><span style="width:${pct}%"></span></div>` : ''}
+      ${rows ? `<ul>${rows}</ul>` : `<p class="msg">Nada a exibir com os filtros atuais.</p>`}
+    </div>
+    <div id="toast"></div>`;
+  if (currentToast) paintToast();
+  measure();
+}
+
+let currentToast = null;
+
+function paintToast() {
+  const node = document.getElementById('toast');
+  if (!node || !currentToast) return;
+  node.textContent = currentToast.text;
+  node.className = currentToast.isError ? 'err' : '';
+  measure();
+}
+
+window.ra.onToast(msg => {
+  currentToast = msg;
+  paintToast();
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
+    currentToast = null;
+    const node = document.getElementById('toast');
+    if (node) { node.textContent = ''; node.className = ''; }
+    measure();
+  }, 6000);
+});
+
+function measure() {
+  requestAnimationFrame(() => {
+    const h = root.getBoundingClientRect().height;
+    if (Math.abs(h - lastHeight) > 1) {
+      lastHeight = h;
+      window.ra.reportHeight(h);
+    }
+  });
+}
+
+window.ra.onData(render);
+</script>
+</body>
+</html>

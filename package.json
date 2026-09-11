@@ -1,0 +1,33 @@
+{
+  "name": "ra-overlay",
+  "version": "1.0.0",
+  "description": "Overlay externo de conquistas do RetroAchievements para PCSX2",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --win portable"
+  },
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^31.0.0",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.local.raoverlay",
+    "productName": "RA Overlay",
+    "icon": "assets/icon.ico",
+    "artifactName": "RA-Overlay-${version}.${ext}",
+    "files": [
+      "main.js",
+      "preload.js",
+      "backup.js",
+      "overlay.html",
+      "settings.html",
+      "node_modules/**/*"
+    ]
+  },
+  "dependencies": {
+    "archiver": "^7.0.1"
+  }
+}
